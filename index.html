@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <title>Audification Experiment</title>
+    <style>
+      #content {
+        max-width: 1000px;
+        margin: 0 auto;
+        background-color: #DDD;
+        text-align: left;
+        padding: 1em;
+
+        font-family: "Helvetica Neue", "Arial", sans-serif;
+      }
+
+      #vis {
+        width: 100%;
+        background: #CCC;
+        padding: 0.5em;
+        margin-top: 1em;
+      }
+
+      #vis div {
+        background: #333;
+        margin: 0.2em 0;
+        color: #EEE;
+        text-align: right;
+        font-size: 1.5em;
+      }
+
+      #data input {
+        width: 50%;
+      }
+    </style>
+  </head>
+  <body>
+
+    <div id="content">
+
+      <h1>Audification Experiment</h1>
+
+      <div id="data">
+        <label>
+          Dataset:
+          <input type="text" value="200 600 1200 500 900 100" id="datainput"/>
+        </label>
+        <button id="visualise">Visualise!</button>
+      </div>
+
+      <div id="vis"></div>
+
+      <div id="audio">
+        <button id="audify">audify!</button>
+      </div>
+
+      <p>
+        To protect your ears, please tune down your speaker / headphone before clicking "audify!".
+      </p>
+      <p>
+        This webpage relies on WebAudio API, which Internet Explorer does not support.
+      </p>
+    </div>
+
+    <script>
+      (function(window, document){
+
+        var btnVisualise = document.getElementById('visualise');
+        var btnAudify = document.getElementById("audify");
+        var textInput = document.getElementById('datainput');
+        var visDiv = document.getElementById('vis');
+        var data, i, bar, audioContext, oscillators=[], gainNode;
+
+        var interval = 2;
+
+        function calcFrequency(datapoint) {
+          return datapoint;
+        }
+
+        // Initialise WebAudio context
+        window.AudioContext = window.AudioContext||window.webkitAudioContext;
+        audioContext = new AudioContext();
+
+        gainNode = audioContext.createGain();
+        gainNode.connect(audioContext.destination);
+
+        btnVisualise.addEventListener('click', function(){
+          data = textInput.value.split(' ')
+                                .map(function(s){return parseInt(s, 10)});
+
+          visDiv.innerHTML = '';
+
+          for (i in data) if (data.hasOwnProperty(i)) {
+            bar = document.createElement('div');
+            bar.style.height = '50px';
+            bar.style.width = data[i] * 0.5 + 'px';
+            bar.innerHTML = data[i];
+
+            visDiv.appendChild(bar);
+          }
+
+        });
+
+        btnAudify.addEventListener('click', function(){
+          for (i in data) if (data.hasOwnProperty(i)) {
+            // Initialise Oscillator
+            oscillators[i] = audioContext.createOscillator();
+            // Connect Stuff
+            oscillators[i].connect(gainNode);
+            gainNode.gain.value = 0.2;
+            oscillators[i].type = 'sine';
+            oscillators[i].frequency.value = calcFrequency(data[i]);
+
+            oscillators[i].start(audioContext.currentTime + i*interval);      // Start sound #i after i*interval seconds
+            oscillators[i].stop(audioContext.currentTime + i*interval + interval);
+
+            // Highlight the respective bar
+            setTimeout(function(k){
+              return function(){
+                visDiv.childNodes[k].style.backgroundColor = '#ABC';
+              };
+            }(i), i*interval*1000);
+
+            // De-highlight the respective bar
+            setTimeout(function(k){
+              return function(){
+                visDiv.childNodes[k].style.backgroundColor = '#333';
+              };
+            }(i), (i*interval + interval)*1000);
+
+            console.log('oscillator created: '+oscillators[i].frequency.value)
+          }
+        });
+
+      }(window, window.document));
+
+    </script>
+  </body>
+</html>
