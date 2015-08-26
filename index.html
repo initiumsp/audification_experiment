@@ -86,7 +86,7 @@
 
         btnVisualise.addEventListener('click', function(){
           data = textInput.value.split(' ')
-                                .map(function(s){return parseInt(s, 10)});
+                                .map(Number);
 
           visDiv.innerHTML = '';
 
